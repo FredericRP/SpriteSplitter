@@ -1,9 +1,35 @@
 import sys, os
 from PIL import Image
+import requests
 
-def extract_sprites(input_image_path, output_path):
+def extract_filename(full_filename):
+    # Extract the base filename without extension
+    filename = os.path.basename(full_filename)
+    filename_without_extension = os.path.splitext(filename)[0]
+    return filename_without_extension
+
+def remove_background(spritesheet_path, output_folder, api_key):
+    # Request background removal from remove.bg API
+    response = requests.post(
+        'https://api.remove.bg/v1.0/removebg',
+        files={'image_file': open(spritesheet_path, 'rb')},
+        data={'size': 'preview'},
+        headers={'X-Api-Key': api_key},
+    )
+
+    if response.status_code == requests.codes.ok:
+        filename_without_extension = extract_filename(spritesheet_path)
+        # Save the image with the background removed
+        with open(f"{output_folder}/{filename_without_extension}.png", 'wb') as out:
+            out.write(response.content)
+
+def extract_sprites(input_image_path, output_path, api_key):
+    filename_without_extension = extract_filename(input_image_path)
+    no_bg_filename = f"no_bg/{filename_without_extension}.png";
+    # Remove background from sprite
+    remove_background(input_image_path, "no_bg", api_key)
     # Load the spritesheet
-    spritesheet = Image.open(input_image_path)
+    spritesheet = Image.open(no_bg_filename)
 
     # Define minimum size for sprites
     min_sprite_size = (4, 4)
@@ -65,13 +91,14 @@ def extract_sprites(input_image_path, output_path):
         sprite.save(f"{output_path}/sprite_{idx}.png", "PNG")
 
 # Check if the correct number of arguments is provided
-if len(sys.argv) != 3:
-    print("Usage: python remove_bg_and_split.py <spritesheet_path> <output_folder>")
+if len(sys.argv) != 4:
+    print("Usage: python remove_bg_and_split.py <spritesheet_path> <output_folder> <api_key>")
     sys.exit(1)
 
 # Get arguments
 spritesheet_path = sys.argv[1]
 output_folder = sys.argv[2]
+api_key = sys.argv[3]
 
 # Call the function with provided arguments
-extract_sprites(spritesheet_path, output_folder)
+extract_sprites(spritesheet_path, output_folder, api_key)
