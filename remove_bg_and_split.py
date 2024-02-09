@@ -23,7 +23,19 @@ def remove_background(spritesheet_path, output_folder, api_key):
         with open(f"{output_folder}/{filename_without_extension}.png", 'wb') as out:
             out.write(response.content)
 
-def extract_sprites(input_image_path, output_path, api_key):
+def extract_sprites(input_folder, output_folder, api_key):
+    for filename in os.listdir(input_folder):
+            # Check if picture is a spritesheet (PNG)
+            if filename.endswith(".png"):
+                spritesheet_path = os.path.join(input_folder, filename)
+                output_sprites_folder = os.path.join(output_folder, os.path.splitext(filename)[0])
+            # Make subfolder for associated sprites
+            os.makedirs(output_sprites_folder, exist_ok=True)
+
+            # Extract sprites from each spritesheet
+            extract_sprites_from_sheet(spritesheet_path, output_sprites_folder, api_key)
+
+def extract_sprites_from_sheet(input_image_path, output_path, api_key):   
     filename_without_extension = extract_filename(input_image_path)
     no_bg_filename = f"no_bg/{filename_without_extension}.png";
     # Remove background from sprite
@@ -92,7 +104,7 @@ def extract_sprites(input_image_path, output_path, api_key):
 
 # Check if the correct number of arguments is provided
 if len(sys.argv) != 4:
-    print("Usage: python remove_bg_and_split.py <spritesheet_path> <output_folder> <api_key>")
+    print("Usage: python remove_bg_and_split.py <spritesheets_folder> <output_folder> <api_key>")
     sys.exit(1)
 
 # Get arguments
